@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Runtime SQLite & Object Storage Vault
+storage/*.sqlite
+storage/*.sqlite-shm
+storage/*.sqlite-wal
+storage/objects/
+
+# Environment secrets
+.env
+.env*.local
+
+# Logs & OS files
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+next-env.d.ts

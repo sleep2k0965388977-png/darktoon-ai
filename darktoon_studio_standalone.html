@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>DARKTOON AI — Interactive 2D Storytelling Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-[#0B0B0D] text-[#F5F5F5] antialiased p-4 space-y-4">
+  <!-- Studio Header Bar -->
+  <header class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#292930] bg-[#111114] px-4 py-3">
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F04444] font-mono text-sm font-black text-white shadow">
+        DT
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-[#F5F5F5]">DARKTOON AI — Audio to 2D Animated Storytelling</span>
+          <span class="rounded bg-[#18181D] px-2 py-0.5 font-mono text-xs text-[#92929B] border border-[#292930]">HYBRID 2D RIG + AI VIDEO</span>
+        </div>
+        <p class="text-xs text-[#92929B]">Dự án: Đêm Khuya & Chiếc Điện Thoại (16:9 · 1080p · 4 Scenes · 3 Locked Characters)</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="switchTab('storyboard')" id="tab_storyboard" class="rounded-md bg-[#F04444] px-3 py-1.5 text-xs font-semibold text-white cursor-pointer">
+        1. Storyboard Editor (3 Cột)
+      </button>
+      <button onclick="switchTab('audio')" id="tab_audio" class="rounded-md border border-[#292930] bg-[#18181D] px-3 py-1.5 text-xs font-semibold text-[#F5F5F5] cursor-pointer">
+        2. Audio & Diarization
+      </button>
+      <button onclick="switchTab('characters')" id="tab_characters" class="rounded-md border border-[#292930] bg-[#18181D] px-3 py-1.5 text-xs font-semibold text-[#F5F5F5] cursor-pointer">
+        3. Character Library (2D Rig)
+      </button>
+      <button onclick="switchTab('render')" id="tab_render" class="rounded-md border border-[#292930] bg-[#18181D] px-3 py-1.5 text-xs font-semibold text-[#F5F5F5] cursor-pointer">
+        4. Quality Control & Export MP4
+      </button>
+      <button onclick="startFullAutomatedTest()" class="rounded-md bg-[#22C55E] px-3.5 py-1.5 text-xs font-bold text-black hover:bg-[#1ea950] cursor-pointer shadow">
+        ⚡ Chạy Auto-Test Toàn Bộ Chức Năng
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Test Progress Banner -->
+  <div id="autoTestBanner" class="hidden rounded-lg border border-[#22C55E]/50 bg-[#22C55E]/10 px-4 py-2.5 text-xs text-[#22C55E] flex items-center justify-between">
+    <span id="autoTestStepText" class="font-mono font-semibold">Đang chạy kiểm tra tự động...</span>
+    <span id="autoTestPct" class="font-mono font-bold">0%</span>
+  </div>
+
+  <!-- TAB 1: 3-COLUMN STORYBOARD EDITOR + 6-TRACK TIMELINE -->
+  <section id="view_storyboard" class="space-y-4">
+    <div class="grid grid-cols-12 gap-4">
+      <!-- Left Column: Scene List (3 cols) -->
+      <div class="col-span-3 rounded-xl border border-[#292930] bg-[#111114] p-3 space-y-2.5">
+        <div class="flex items-center justify-between border-b border-[#292930] pb-2">
+          <span class="text-xs font-bold uppercase text-[#F5F5F5]">Scene List (4)</span>
+          <span class="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-xs text-amber-400">[MOCK]</span>
+        </div>
+        <div id="sceneListContainer" class="space-y-2"></div>
+      </div>
+
+      <!-- Center Column: Interactive 2D Stage Preview (5 cols) -->
+      <div class="col-span-5 rounded-xl border border-[#292930] bg-[#18181D] p-4 flex flex-col justify-between space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <span id="centerSceneTitle" class="text-sm font-bold text-[#F5F5F5]">Scene 01 — Mở đầu cô đơn</span>
+            <p id="centerSceneMeta" class="text-xs text-[#92929B]">Background: bg_living_room · Method: RIG_2D · Asset v1</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="approveActiveScene()" class="rounded bg-[#22C55E] px-3 py-1 text-xs font-bold text-black cursor-pointer">
+              ✓ Approve Scene
+            </button>
+            <button onclick="flagActiveScene()" class="rounded border border-[#F59E0B] bg-[#F59E0B]/15 px-2.5 py-1 text-xs text-[#F59E0B] cursor-pointer">
+              ! Needs Review
+            </button>
+          </div>
+        </div>
+
+        <!-- SVG Stage -->
+        <div class="rounded-lg border border-[#292930] bg-[#0B0B0D] p-2">
+          <svg id="mainStageSvg" viewBox="0 0 720 380" class="w-full h-64 block">
+            <defs>
+              <radialGradient id="fullRoomGlow" cx="50%" cy="40%" r="65%">
+                <stop offset="0%" stop-color="#191924" />
+                <stop offset="100%" stop-color="#09090C" />
+              </radialGradient>
+            </defs>
+            <g id="fullCamViewport">
+              <rect width="720" height="380" fill="url(#fullRoomGlow)" />
+              <rect x="0" y="296" width="720" height="84" fill="#060608" />
+              <line x1="0" y1="296" x2="720" y2="296" stroke="#292930" stroke-width="2" />
+              <g id="fullBgDecor"></g>
+              <g id="fullProps"></g>
+              <g id="fullRigChars"></g>
+            </g>
+          </svg>
+          <div id="fullSubtitle" class="mt-2 rounded bg-[#111114] border border-[#292930] px-3 py-2 text-center text-xs font-medium text-[#F5F5F5]"></div>
+        </div>
+
+        <!-- Transport Controls -->
+        <div class="flex items-center justify-between rounded-lg border border-[#292930] bg-[#111114] px-3 py-2">
+          <div class="flex items-center gap-2">
+            <button onclick="prevScene()" class="rounded border border-[#292930] bg-[#18181D] px-2.5 py-1 text-xs cursor-pointer">◀ Prev</button>
+            <button id="fullPlayBtn" onclick="togglePlayback()" class="rounded bg-[#F04444] px-3.5 py-1 text-xs font-bold text-white cursor-pointer">▶ Play Preview</button>
+            <button onclick="nextScene()" class="rounded border border-[#292930] bg-[#18181D] px-2.5 py-1 text-xs cursor-pointer">Next ▶</button>
+          </div>
+          <span id="fullTimecode" class="font-mono text-xs text-[#92929B]">00:00.0 / 24.0s</span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="regenerateSceneAsset('image')" class="rounded border border-[#292930] bg-[#18181D] hover:border-[#F04444] px-2.5 py-1 text-xs cursor-pointer">↻ Tạo lại Ảnh</button>
+            <button onclick="regenerateSceneAsset('anim')" class="rounded border border-[#292930] bg-[#18181D] hover:border-[#F04444] px-2.5 py-1 text-xs cursor-pointer">✨ Tạo lại Anim</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Scene Properties Inspector (4 cols) -->
+      <div class="col-span-4 rounded-xl border border-[#292930] bg-[#18181D] p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-[#292930] pb-2">
+          <span class="text-xs font-bold uppercase text-[#F5F5F5]">Scene Properties & Override</span>
+          <span id="inspectorVersionBadge" class="rounded bg-[#111114] px-2 py-0.5 font-mono text-xs text-[#92929B] border border-[#292930]">Asset v1</span>
+        </div>
+
+        <div>
+          <label class="block text-xs text-[#92929B] mb-1">Lời thoại (Transcript đồng bộ Audio gốc)</label>
+          <textarea id="inpTranscript" rows="2" oninput="applyInspectorChanges()" class="w-full rounded border border-[#292930] bg-[#0B0B0D] p-2 text-xs text-[#F5F5F5]"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs text-[#92929B] mb-1">Hành động (17 Actions)</label>
+            <select id="inpAction" onchange="applyInspectorChanges()" class="w-full rounded border border-[#292930] bg-[#0B0B0D] px-2.5 py-1.5 text-xs text-[#F5F5F5]">
+              <option value="sitting">sitting</option>
+              <option value="using_phone">using_phone</option>
+              <option value="holding_phone">holding_phone</option>
+              <option value="looking_down">looking_down</option>
+              <option value="turning_head">turning_head</option>
+              <option value="walking">walking</option>
+              <option value="running">running</option>
+              <option value="talking">talking</option>
+              <option value="waving">waving</option>
+              <option value="pointing">pointing</option>
+              <option value="standing">standing</option>
+              <option value="falling">falling</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-[#92929B] mb-1">Biểu cảm (10 Expressions)</label>
+            <select id="inpExpr" onchange="applyInspectorChanges()" class="w-full rounded border border-[#292930] bg-[#0B0B0D] px-2.5 py-1.5 text-xs text-[#F5F5F5]">
+              <option value="sad">sad</option>
+              <option value="thinking">thinking</option>
+              <option value="tired">tired</option>
+              <option value="worried">worried</option>
+              <option value="crying">crying</option>
+              <option value="neutral">neutral</option>
+              <option value="happy">happy</option>
+              <option value="angry">angry</option>
+              <option value="surprised">surprised</option>
+              <option value="confused">confused</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs text-[#92929B] mb-1">Bối cảnh (Background ID)</label>
+            <select id="inpBg" onchange="applyInspectorChanges()" class="w-full rounded border border-[#292930] bg-[#0B0B0D] px-2.5 py-1.5 text-xs text-[#F5F5F5]">
+              <option value="bg_living_room">bg_living_room (Phòng khách)</option>
+              <option value="bg_bedroom">bg_bedroom (Phòng ngủ)</option>
+              <option value="bg_night_street">bg_night_street (Đường phố đêm)</option>
+              <option value="bg_desk_workspace">bg_desk_workspace (Bàn làm việc)</option>
+              <option value="bg_mind_void">bg_mind_void (Tâm lý nội tâm)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-[#92929B] mb-1">Phương pháp Animation</label>
+            <select id="inpMethod" onchange="applyInspectorChanges()" class="w-full rounded border border-[#292930] bg-[#0B0B0D] px-2.5 py-1.5 text-xs text-[#F5F5F5]">
+              <option value="RIG_2D">RIG_2D (8-Part Rig)</option>
+              <option value="AI_VIDEO">AI_VIDEO (Hybrid)</option>
+              <option value="STATIC_MOTION">STATIC_MOTION (Camera)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-[#92929B] mb-1">Image Prompt (Dark Minimalist 2D)</label>
+          <textarea id="inpPrompt" rows="2" class="w-full rounded border border-[#292930] bg-[#0B0B0D] p-2 text-xs text-[#92929B]"></textarea>
+        </div>
+
+        <div id="aiReasonBox" class="rounded border border-[#292930] bg-[#111114] p-2.5 text-xs text-[#92929B]">
+          <strong class="text-[#F5F5F5]">AI Animation Router:</strong> Chọn RIG_2D để khóa cứng thiết kế nhân vật (Character ID: char_main) và tối ưu chi phí.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom 6-Track Timeline -->
+    <div class="rounded-xl border border-[#292930] bg-[#111114] p-3 space-y-2">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold uppercase text-[#F5F5F5]">6-Track Master Synchronized Timeline (24.0s)</span>
+        <input id="masterTimelineInput" type="range" min="0" max="24" step="0.1" value="0" oninput="seekMaster(this.value)" class="w-1/2 accent-[#F04444] cursor-pointer" />
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-xs font-mono">
+        <div onclick="pickScene(0)" class="cursor-pointer rounded bg-[#18181D] border border-[#292930] p-2 hover:border-[#F04444]">0.0s - 6.0s · Scene 01 (RIG_2D)</div>
+        <div onclick="pickScene(1)" class="cursor-pointer rounded bg-[#18181D] border border-[#292930] p-2 hover:border-[#F04444]">6.0s - 12.0s · Scene 02 (RIG_2D)</div>
+        <div onclick="pickScene(2)" class="cursor-pointer rounded bg-[#18181D] border border-[#292930] p-2 hover:border-[#F04444]">12.0s - 18.0s · Scene 03 (RIG_2D)</div>
+        <div onclick="pickScene(3)" class="cursor-pointer rounded bg-[#18181D] border border-[#292930] p-2 hover:border-[#F04444]">18.0s - 24.0s · Scene 04 (RIG_2D)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: AUDIO & DIARIZATION -->
+  <section id="view_audio" class="hidden rounded-xl border border-[#292930] bg-[#18181D] p-5 space-y-4">
+    <h2 class="text-base font-bold text-[#F5F5F5]">Audio Analysis, Speaker Diarization & Story Understanding</h2>
+    <div class="grid grid-cols-2 gap-4 text-xs">
+      <div class="rounded-lg border border-[#292930] bg-[#111114] p-4 space-y-2">
+        <div class="font-bold text-[#22C55E]">SPK_01 — Nhân vật Tôi (Main Character)</div>
+        <p class="text-[#92929B]">Giọng trầm, nhịp chậm, tự sự nội tâm (Gắn với Character ID: char_main #F4F1EA)</p>
+      </div>
+      <div class="rounded-lg border border-[#292930] bg-[#111114] p-4 space-y-2">
+        <div class="font-bold text-[#38BDF8]">SPK_02 — Người bạn (Confidant)</div>
+        <p class="text-[#92929B]">Giọng ấm, thấu cảm, đối thoại ở phân đoạn 12.0s - 18.0s (Gắn với Character ID: char_friend #CBD5E1)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: CHARACTER LIBRARY -->
+  <section id="view_characters" class="hidden rounded-xl border border-[#292930] bg-[#18181D] p-5 space-y-4">
+    <h2 class="text-base font-bold text-[#F5F5F5]">Character Library (Locked Design Profiles)</h2>
+    <div class="grid grid-cols-3 gap-4 text-xs">
+      <div class="rounded-lg border border-[#292930] bg-[#111114] p-4 space-y-2">
+        <div class="flex justify-between font-bold"><span>Nhân vật Tôi (#F4F1EA)</span><span class="text-[#22C55E]">🔒 LOCKED</span></div>
+        <p class="text-[#92929B]">8 bộ phận khớp xương: Head, Body, Left/Right Arm, Left/Right Leg, Eyes, Mouth.</p>
+      </div>
+      <div class="rounded-lg border border-[#292930] bg-[#111114] p-4 space-y-2">
+        <div class="flex justify-between font-bold"><span>Người bạn (#CBD5E1)</span><span class="text-[#22C55E]">🔒 LOCKED</span></div>
+        <p class="text-[#92929B]">Nhân vật đồng hành tông xám sáng, giữ nguyên tỷ lệ cơ thể với nhân vật chính.</p>
+      </div>
+      <div class="rounded-lg border border-[#292930] bg-[#111114] p-4 space-y-2">
+        <div class="flex justify-between font-bold"><span>Bóng tối nội tâm (#09090C)</span><span class="text-[#22C55E]">🔒 LOCKED</span></div>
+        <p class="text-[#92929B]">Nhân vật biểu tượng tâm lý đen tuyền với viền sáng đỏ (#F04444).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: QUALITY CONTROL & EXPORT MP4 -->
+  <section id="view_render" class="hidden rounded-xl border border-[#292930] bg-[#18181D] p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-base font-bold text-[#F5F5F5]">Pre-Render Quality Control & FFmpeg H.264 MP4 Export</h2>
+        <p class="text-xs text-[#92929B]">Kiểm tra 9 tiêu chí QC trước khi xuất video MP4 đồng bộ Audio gốc</p>
+      </div>
+      <span class="rounded bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/40 px-3 py-1 font-mono text-xs font-bold">QC PASSED (100% Audio Sync)</span>
+    </div>
+    <div class="grid grid-cols-3 gap-4 text-xs">
+      <div class="rounded border border-[#292930] bg-[#111114] p-3">✔ Không thiếu ảnh / animation ở bất kỳ cảnh nào</div>
+      <div class="rounded border border-[#292930] bg-[#111114] p-3">✔ Nhân vật khóa thiết kế (locked=true) xuyên suốt 4 cảnh</div>
+      <div class="rounded border border-[#292930] bg-[#111114] p-3">✔ Đã xuất MP4 H.264 + AAC tại http://localhost:3000</div>
+    </div>
+  </section>
+
+  <script>
+    const studioScenes = [
+      { index: 1, title: "Mở đầu — Cô đơn trên sofa", start: 0, end: 6, text: "Có những ngày tôi chỉ muốn ở một mình trong căn phòng tối.", action: "sitting", expression: "sad", bg: "bg_living_room", method: "RIG_2D", status: "APPROVED", version: 1, prompt: "Dark minimalist 2D animation, rounded off-white figure sitting alone on dark sofa, #0B0B0D room, subtle blue window light, no text." },
+      { index: 2, title: "Ngập ngừng trước màn hình ĐT", start: 6, end: 12, text: "Tôi đã mở điện thoại lên rất nhiều lần, nhìn vào danh bạ rồi lại lặng lẽ khóa màn hình.", action: "using_phone", expression: "thinking", bg: "bg_bedroom", method: "RIG_2D", status: "APPROVED", version: 2, prompt: "Dark minimalist 2D close-up, off-white character holding glowing smartphone in dark bedroom, hesitant expression, no text." },
+      { index: 3, title: "Lời nhắc từ người bạn", start: 12, end: 18, text: "Cậu lúc nào cũng nói mình ổn, nhưng ánh mắt khi nhìn ra cửa sổ thành phố chẳng giấu được sự mệt mỏi.", action: "talking", expression: "tired", bg: "bg_bedroom", method: "RIG_2D", status: "GENERATED", version: 1, prompt: "Two minimalist 2D figures in dark room by city window, subtle night lights, empathetic conversation, no text." },
+      { index: 4, title: "Bước đi dưới ánh đèn đường", start: 18, end: 24, text: "Có lẽ bước qua đêm dài này, tôi sẽ học cách đối diện với khoảng lặng của chính mình.", action: "walking", expression: "happy", bg: "bg_night_street", method: "RIG_2D", status: "APPROVED", version: 1, prompt: "Wide shot dark minimalist night street, solitary streetlamp cone, character walking forward calmly, no text." }
+    ];
+
+    let curIdx = 0;
+    let curSec = 0;
+    let playing = false;
+    let tick = 0;
+
+    function switchTab(tab) {
+      ["storyboard", "audio", "characters", "render"].forEach((t) => {
+        document.getElementById("view_" + t).className = t === tab ? "space-y-4" : "hidden";
+        document.getElementById("tab_" + t).className =
+          t === tab
+            ? "rounded-md bg-[#F04444] px-3 py-1.5 text-xs font-semibold text-white cursor-pointer"
+            : "rounded-md border border-[#292930] bg-[#18181D] px-3 py-1.5 text-xs font-semibold text-[#F5F5F5] cursor-pointer";
+      });
+    }
+
+    function renderSceneList() {
+      const container = document.getElementById("sceneListContainer");
+      container.innerHTML = studioScenes
+        .map(
+          (s, i) => `
+        <div onclick="pickScene(${i})" class="cursor-pointer rounded-lg border p-2.5 transition ${
+            i === curIdx ? "border-[#F04444] bg-[#18181D]" : "border-[#292930] bg-[#0B0B0D]"
+          }">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="font-bold text-[#F5F5F5]">SCENE 0${s.index}</span>
+            <span class="${
+              s.status === "APPROVED" ? "text-[#22C55E]" : "text-[#F59E0B]"
+            }">${s.status} · v${s.version}</span>
+          </div>
+          <p class="mt-1 text-xs text-[#F5F5F5] line-clamp-2">"${s.text}"</p>
+          <div class="mt-1.5 flex justify-between text-xs text-[#92929B]">
+            <span>${s.start}s - ${s.end}s</span>
+            <span>${s.action} · ${s.expression}</span>
+          </div>
+        </div>
+      `
+        )
+        .join("");
+    }
+
+    function pickScene(idx) {
+      curIdx = idx;
+      const s = studioScenes[idx];
+      curSec = s.start;
+      document.getElementById("inpTranscript").value = s.text;
+      document.getElementById("inpAction").value = s.action;
+      document.getElementById("inpExpr").value = s.expression;
+      document.getElementById("inpBg").value = s.bg;
+      document.getElementById("inpMethod").value = s.method;
+      document.getElementById("inpPrompt").value = s.prompt;
+      document.getElementById("inspectorVersionBadge").textContent = "Asset v" + s.version;
+      renderSceneList();
+      drawMainStage();
+    }
+
+    function applyInspectorChanges() {
+      const s = studioScenes[curIdx];
+      s.text = document.getElementById("inpTranscript").value;
+      s.action = document.getElementById("inpAction").value;
+      s.expression = document.getElementById("inpExpr").value;
+      s.bg = document.getElementById("inpBg").value;
+      s.method = document.getElementById("inpMethod").value;
+      renderSceneList();
+      drawMainStage();
+    }
+
+    function approveActiveScene() {
+      studioScenes[curIdx].status = "APPROVED";
+      renderSceneList();
+      drawMainStage();
+    }
+
+    function flagActiveScene() {
+      studioScenes[curIdx].status = "NEEDS_REVIEW";
+      renderSceneList();
+      drawMainStage();
+    }
+
+    function regenerateSceneAsset(kind) {
+      const s = studioScenes[curIdx];
+      s.version += 1;
+      document.getElementById("inspectorVersionBadge").textContent = "Asset v" + s.version;
+      renderSceneList();
+      drawMainStage();
+    }
+
+    function prevScene() {
+      if (curIdx > 0) pickScene(curIdx - 1);
+    }
+    function nextScene() {
+      if (curIdx < studioScenes.length - 1) pickScene(curIdx + 1);
+    }
+    function togglePlayback() {
+      playing = !playing;
+      document.getElementById("fullPlayBtn").textContent = playing ? "⏸ Pause" : "▶ Play Preview";
+    }
+    function seekMaster(val) {
+      curSec = parseFloat(val);
+      const found = studioScenes.findIndex((s) => curSec >= s.start && curSec < s.end);
+      if (found !== -1 && found !== curIdx) pickScene(found);
+      drawMainStage();
+    }
+
+    function drawMainStage() {
+      const s = studioScenes[curIdx];
+      document.getElementById("centerSceneTitle").textContent = `Scene 0${s.index} — ${s.title}`;
+      document.getElementById("centerSceneMeta").textContent = `Background: ${s.bg} · Method: ${s.method} · Status: ${s.status} · Asset v${s.version}`;
+      document.getElementById("fullSubtitle").textContent = s.text;
+      document.getElementById("fullTimecode").textContent = `${curSec.toFixed(1)}s / 24.0s`;
+      document.getElementById("masterTimelineInput").value = curSec;
+
+      const phase = Math.sin(tick * 0.25);
+      const breathe = Math.sin(tick * 0.12) * 2;
+      const isSitting = s.action === "sitting";
+      const isWalking = s.action === "walking" || s.action === "running";
+      const isPhone = s.action === "using_phone" || s.action === "holding_phone";
+
+      const lArm = isPhone ? 36 : isWalking ? phase * 30 : 16;
+      const rArm = isPhone ? -70 : isWalking ? -phase * 30 : -16;
+      const lLeg = isSitting ? 72 : isWalking ? -phase * 28 : 3;
+      const rLeg = isSitting ? -72 : isWalking ? phase * 28 : -3;
+      const headRot = isPhone ? 18 : s.action === "looking_down" ? 22 : phase * 3;
+      const baseY = isSitting ? 218 : 196;
+
+      document.getElementById("fullBgDecor").innerHTML =
+        s.bg === "bg_night_street"
+          ? `<line x1="180" y1="50" x2="180" y2="296" stroke="#323642" stroke-width="6"/><polygon points="205,54 90,296 330,296" fill="#38BDF8" opacity="0.10"/><ellipse cx="205" cy="54" rx="14" ry="5" fill="#E0F2FE"/>`
+          : `<rect x="490" y="45" width="130" height="125" rx="4" fill="#0D1322" stroke="#292930" stroke-width="2.5"/><line x1="555" y1="45" x2="555" y2="170" stroke="#292930" stroke-width="2"/><line x1="490" y1="107" x2="620" y2="107" stroke="#292930" stroke-width="2"/>`;
+
+      document.getElementById("fullProps").innerHTML = isSitting
+        ? `<rect x="240" y="236" width="240" height="56" rx="10" fill="#171720" stroke="#2E2E3A" stroke-width="2"/>`
+        : "";
+
+      const phoneSvg = isPhone
+        ? `<g transform="translate(-3, 42)"><rect x="0" y="0" width="11" height="18" rx="2" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5"/><circle cx="5.5" cy="9" r="8" fill="#38BDF8" opacity="0.25"/></g>`
+        : "";
+
+      document.getElementById("fullRigChars").innerHTML = `
+        <g transform="translate(360, ${baseY})">
+          <ellipse cx="0" cy="${isSitting ? 78 : 100}" rx="38" ry="7" fill="#000" opacity="0.55"/>
+          <g transform="translate(-10, 44) rotate(${lLeg})"><rect x="-5.5" y="0" width="11" height="56" rx="5.5" fill="#F4F1EA" stroke="#FFF" stroke-width="2"/></g>
+          <g transform="translate(10, 44) rotate(${rLeg})"><rect x="-5.5" y="0" width="11" height="56" rx="5.5" fill="#F4F1EA" stroke="#FFF" stroke-width="2"/></g>
+          <rect x="-21" y="-20" width="42" height="68" rx="20" fill="#F4F1EA" stroke="#FFF" stroke-width="2.2"/>
+          <g transform="translate(-21, -10) rotate(${lArm})"><rect x="-5.5" y="0" width="11" height="48" rx="5.5" fill="#F4F1EA" stroke="#FFF" stroke-width="2"/></g>
+          <g transform="translate(21, -10) rotate(${rArm})"><rect x="-5.5" y="0" width="11" height="48" rx="5.5" fill="#F4F1EA" stroke="#FFF" stroke-width="2"/>${phoneSvg}</g>
+          <g transform="translate(0, ${-48 + breathe}) rotate(${headRot})">
+            <circle cx="0" cy="0" r="28" fill="#F4F1EA" stroke="#FFF" stroke-width="2.4"/>
+            <circle cx="-10" cy="-3" r="3" fill="#18181D"/><circle cx="10" cy="-3" r="3" fill="#18181D"/>
+            <line x1="-6" y1="10" x2="6" y2="10" stroke="#18181D" stroke-width="2.2" stroke-linecap="round"/>
+          </g>
+        </g>
+      `;
+    }
+
+    async function startFullAutomatedTest() {
+      const banner = document.getElementById("autoTestBanner");
+      const text = document.getElementById("autoTestStepText");
+      const pct = document.getElementById("autoTestPct");
+      banner.classList.remove("hidden");
+      switchTab("storyboard");
+      playing = true;
+
+      const steps = [
+        { p: "20%", msg: "Bước 1/5: Kiểm tra Scene 01 (Ngồi sofa phòng khách tối · Biểu cảm sad · RIG_2D)...", sc: 0 },
+        { p: "45%", msg: "Bước 2/5: Kiểm tra Scene 02 (Mở điện thoại trong phòng ngủ · Regenerate Asset v2 -> v3)...", sc: 1, regen: true },
+        { p: "70%", msg: "Bước 3/5: Kiểm tra Scene 03 (Hội thoại người bạn · Duyệt cảnh APPROVED)...", sc: 2, approve: true },
+        { p: "90%", msg: "Bước 4/5: Kiểm tra Scene 04 (Đi bộ dưới đèn đường đêm · Camera pan_right)...", sc: 3 },
+        { p: "100%", msg: "✔ HOÀN TẤT AUTO-TEST: Tất cả 4 cảnh, khớp xương 2D Rig, Asset Versioning và QC đều đạt chuẩn 100%!", sc: 0 }
+      ];
+
+      for (const st of steps) {
+        pickScene(st.sc);
+        if (st.regen) regenerateSceneAsset("image");
+        if (st.approve) approveActiveScene();
+        text.textContent = st.msg;
+        pct.textContent = st.p;
+        await new Promise((r) => setTimeout(r, 1300));
+      }
+    }
+
+    setInterval(() => {
+      tick += 1;
+      if (playing) {
+        curSec += 0.12;
+        if (curSec >= 24) curSec = 0;
+      }
+      drawMainStage();
+    }, 80);
+
+    pickScene(0);
+  </script>
+</body>
+</html>

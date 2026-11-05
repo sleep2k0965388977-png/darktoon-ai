@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: darktoon-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.example
+    environment:
+      - DATABASE_URL=postgresql://darktoon:darktoon_secret@postgres:5432/darktoon_ai
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT=http://minio:9000
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: darktoon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: darktoon
+      POSTGRES_PASSWORD: darktoon_secret
+      POSTGRES_DB: darktoon_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_postgres_schema.sql:/docker-entrypoint-initdb.d/001_postgres_schema.sql:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: darktoon-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    container_name: darktoon-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: darktoon_minio
+      MINIO_ROOT_PASSWORD: darktoon_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  minio_data:
