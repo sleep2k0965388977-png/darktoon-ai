@@ -151,6 +151,111 @@ export function inferSceneSemanticsFromText(
 } {
   const lower = text.toLowerCase();
 
+  // 1. Podcast desk / workspace / opening greetings
+  if (
+    lower.includes("tab suy nghĩ") ||
+    lower.includes("trăm tab") ||
+    lower.includes("mở thêm một tab") ||
+    lower.includes("bàn làm việc") ||
+    lower.includes("màn hình") ||
+    lower.includes("chào bạn") ||
+    lower.includes("mình là hu")
+  ) {
+    return {
+      backgroundId: "bg_desk_workspace",
+      action: "sitting",
+      props: [
+        { type: "desk", position: "center" },
+        { type: "coffee_cup", position: "right" },
+      ],
+      cameraShot: "medium",
+      cameraMovement: "slow_push_in",
+      narrativePurpose: "Mở đầu podcast tại bàn làm việc với ánh đèn laptop dịu nhẹ",
+    };
+  }
+
+  // 2. Autumn balcony / cool breeze / gazing outside
+  if (
+    lower.includes("ban công") ||
+    lower.includes("se lạnh") ||
+    lower.includes("mùa thu") ||
+    lower.includes("thu len lỏi") ||
+    lower.includes("bước ra ngoài") ||
+    lower.includes("hơi thở của thu")
+  ) {
+    return {
+      backgroundId: "bg_bedroom",
+      action: "turning_head",
+      props: [{ type: "window", position: "right" }],
+      cameraShot: "wide",
+      cameraMovement: "slow_pull_out",
+      narrativePurpose: "Đứng bên cửa sổ ban công cảm nhận hơi lạnh đầu mùa thu",
+    };
+  }
+
+  // 3. Night streetlamp / city in rush / walking solitude
+  if (
+    lower.includes("đèn đường") ||
+    lower.includes("ánh đèn đường") ||
+    lower.includes("vàng ấm") ||
+    lower.includes("trở về nhà") ||
+    lower.includes("vội vã") ||
+    lower.includes("đường phố") ||
+    lower.includes("bước đi")
+  ) {
+    return {
+      backgroundId: "bg_night_street",
+      action: "walking",
+      props: [{ type: "street_lamp", position: "left" }],
+      cameraShot: "wide",
+      cameraMovement: "pan_right",
+      narrativePurpose: "Hành trình độc hành dưới quầng sáng đèn đường vàng ấm",
+    };
+  }
+
+  // 4. Mind void / philosophical emptiness / emotional realization
+  if (
+    lower.includes("càng lớn") ||
+    lower.includes("thấy trống") ||
+    lower.includes("lòng mình") ||
+    lower.includes("nội tâm") ||
+    lower.includes("ở bên mà lòng") ||
+    lower.includes("chính mình")
+  ) {
+    return {
+      backgroundId: "bg_mind_void",
+      action: "standing",
+      props: [{ type: "mind_ring", position: "center" }],
+      cameraShot: "medium",
+      cameraMovement: "slow_push_in",
+      narrativePurpose: "Không gian biểu tượng tâm lý đối diện với cảm giác trống trải",
+    };
+  }
+
+  // 5. Living room window / sofa / silence & vehicle traffic
+  if (
+    lower.includes("khung cửa") ||
+    lower.includes("dòng xe") ||
+    lower.includes("tiếng gió") ||
+    lower.includes("ngồi nhìn") ||
+    lower.includes("khoảng lặng") ||
+    lower.includes("cô đơn") ||
+    lower.includes("buồn") ||
+    lower.includes("sofa")
+  ) {
+    return {
+      backgroundId: "bg_living_room",
+      action: "looking_down",
+      props: [
+        { type: "sofa", position: "center" },
+        { type: "window", position: "right" },
+      ],
+      cameraShot: "close_up",
+      cameraMovement: "slow_push_in",
+      narrativePurpose: "Ngồi trầm ngâm bên ghế sofa nhìn dòng xe và khoảng lặng",
+    };
+  }
+
   if (lower.includes("điện thoại") || lower.includes("nhắn") || lower.includes("cuộc gọi")) {
     return {
       backgroundId: "bg_bedroom",
@@ -162,45 +267,6 @@ export function inferSceneSemanticsFromText(
       cameraShot: "close_up",
       cameraMovement: "slow_push_in",
       narrativePurpose: "Thể hiện sự do dự và cô lập qua hành động cầm điện thoại",
-    };
-  }
-
-  if (lower.includes("cửa sổ") || lower.includes("thành phố") || lower.includes("ngoài kia")) {
-    return {
-      backgroundId: "bg_bedroom",
-      action: "turning_head",
-      props: [{ type: "window", position: "right" }],
-      cameraShot: "wide",
-      cameraMovement: "slow_pull_out",
-      narrativePurpose: "Mở rộng không gian đối lập giữa căn phòng tối và ánh đèn thành phố",
-    };
-  }
-
-  if (lower.includes("bàn làm việc") || lower.includes("màn hình") || lower.includes("công việc")) {
-    return {
-      backgroundId: "bg_desk_workspace",
-      action: "sitting",
-      props: [
-        { type: "desk", position: "center" },
-        { type: "coffee_cup", position: "right" },
-      ],
-      cameraShot: "medium",
-      cameraMovement: "slow_push_in",
-      narrativePurpose: "Khắc họa áp lực công việc và sự tĩnh lặng đêm khuya",
-    };
-  }
-
-  if (lower.includes("bước đi") || lower.includes("đường phố") || lower.includes("về nhà") || lower.includes("mưa")) {
-    return {
-      backgroundId: "bg_night_street",
-      action: "walking",
-      props: [
-        { type: "street_lamp", position: "left" },
-        { type: "rain", position: "center" },
-      ],
-      cameraShot: "wide",
-      cameraMovement: "pan_right",
-      narrativePurpose: "Hành trình độc hành trên con phố tối",
     };
   }
 
@@ -217,7 +283,7 @@ export function inferSceneSemanticsFromText(
 
   if (emotion === "sad" || emotion === "tired" || lower.includes("một mình")) {
     return {
-      backgroundId: "bg_living_room",
+      backgroundId: seqIndex % 2 === 0 ? "bg_mind_void" : "bg_living_room",
       action: seqIndex % 2 === 1 ? "sitting" : "looking_down",
       props: [{ type: "sofa", position: "center" }],
       cameraShot: "medium",
@@ -228,7 +294,7 @@ export function inferSceneSemanticsFromText(
 
   return {
     backgroundId: seqIndex % 2 === 0 ? "bg_mind_void" : "bg_living_room",
-    action: emotion === "happy" ? "standing" : "thinking" === emotion ? "looking_down" : "idle",
+    action: emotion === "happy" ? "standing" : "thinking" === emotion ? "looking_down" : "sitting",
     props: [{ type: "sofa", position: "center" }],
     cameraShot: "medium",
     cameraMovement: "slow_push_in",
@@ -571,26 +637,24 @@ export class ConfigurableLLMProvider implements LLMProvider {
       const bgPreset =
         BACKGROUND_PRESETS[sem.backgroundId] || BACKGROUND_PRESETS.bg_living_room;
 
-      const isDialogueTurn =
-        seg.speaker_name?.includes("bạn") ||
-        seg.text.toLowerCase().includes("cậu ");
+      const isSecondSpeaker =
+        Boolean(secondChar && secondChar.id !== mainChar?.id) &&
+        (seg.speaker_id === secondChar.id || (seg.speaker_name && seg.speaker_name.includes("SPK_02")));
 
-      const sceneChars: PlannedSceneCandidate["characters"] = isDialogueTurn &&
-        secondChar &&
-        secondChar.id !== mainChar?.id
+      const sceneChars: PlannedSceneCandidate["characters"] = isSecondSpeaker && secondChar
         ? [
             {
               character_id: mainChar.id,
               character_name: mainChar.name,
-              action: "looking_down",
-              expression: "tired",
+              action: "turning_head",
+              expression: "thinking",
               position: "left",
               layer_order: 1,
             },
             {
               character_id: secondChar.id,
               character_name: secondChar.name,
-              action: "talking",
+              action: sem.action,
               expression: seg.emotion,
               position: "right",
               layer_order: 2,

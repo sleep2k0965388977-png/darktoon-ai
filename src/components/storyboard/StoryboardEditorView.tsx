@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Camera,
@@ -70,15 +70,78 @@ export const StoryboardEditorView: React.FC = () => {
     "auto" | "mock" | "openai" | "gemini"
   >("mock");
 
-  const activeScene: SceneRecord | undefined = useMemo(
-    () =>
-      scenes.find((s) => s.id === selectedSceneId) ||
-      scenes.find(
-        (s) => currentTime >= s.start_time && currentTime <= s.end_time
-      ) ||
-      scenes[0],
-    [scenes, selectedSceneId, currentTime]
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const totalDuration = Math.max(
+    1,
+    audio?.duration || (scenes.length > 0 ? scenes[scenes.length - 1].end_time : 24)
   );
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (isPlaying) {
+      if (currentTime >= totalDuration - 0.1) {
+        setCurrentTime(0);
+        el.currentTime = 0;
+      } else if (Math.abs(el.currentTime - currentTime) > 0.25) {
+        el.currentTime = currentTime;
+      }
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      const el = audioRef.current;
+      if (el && !el.paused && el.currentTime > 0) {
+        setCurrentTime(Number(el.currentTime.toFixed(2)));
+      } else {
+        const nextTime = currentTime + 0.05;
+        if (nextTime >= totalDuration) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        } else {
+          setCurrentTime(Number(nextTime.toFixed(2)));
+        }
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [isPlaying, currentTime, totalDuration, setCurrentTime, setIsPlaying]);
+
+  // Automatically track scene matching currentTime (Master Clock sync)
+  const currentSceneAtTime = useMemo(
+    () =>
+      scenes.find(
+        (s) => currentTime >= s.start_time && currentTime < s.end_time
+      ) ||
+      (currentTime >= (scenes[scenes.length - 1]?.start_time || 0)
+        ? scenes[scenes.length - 1]
+        : scenes[0]),
+    [scenes, currentTime]
+  );
+
+  // During playback or playhead scrub, activeScene follows the timeline currentTime.
+  // When paused and user explicitly selects a card, view that card unless playhead is elsewhere.
+  const activeScene: SceneRecord | undefined = useMemo(() => {
+    if (isPlaying) {
+      return currentSceneAtTime || scenes[0];
+    }
+    const selected = scenes.find((s) => s.id === selectedSceneId);
+    if (selected && currentTime >= selected.start_time && currentTime <= selected.end_time + 0.1) {
+      return selected;
+    }
+    return currentSceneAtTime || selected || scenes[0];
+  }, [isPlaying, currentSceneAtTime, scenes, selectedSceneId, currentTime]);
+
+  // Synchronize sidebar selection with current active scene during playback
+  useEffect(() => {
+    if (isPlaying && currentSceneAtTime && currentSceneAtTime.id !== selectedSceneId) {
+      setSelectedSceneId(currentSceneAtTime.id, false);
+    }
+  }, [isPlaying, currentSceneAtTime, selectedSceneId, setSelectedSceneId]);
 
   const charById = useMemo(
     () => new Map(characters.map((c) => [c.id, c])),
@@ -193,6 +256,33 @@ export const StoryboardEditorView: React.FC = () => {
   const timeInActiveScene = activeScene
     ? Math.max(0, currentTime - activeScene.start_time)
     : 0;
+
+  // Tách văn bản lời thoại thành từng câu ngắn hiển thị theo thời gian thực (Short Sentences)
+  const currentShortSubtitle = useMemo(() => {
+    const raw = activeScene?.transcript_text || "";
+    if (!raw.trim()) return "";
+    const sents = raw
+      .split(/(?<=[.?!;])\s+|\n+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (sents.length <= 1) return raw;
+
+    const scDur = activeScene
+      ? Math.max(1, activeScene.end_time - activeScene.start_time)
+      : 1;
+    const timeInSc = Math.max(0, currentTime - (activeScene?.start_time || 0));
+    const totalChars = sents.reduce((acc, s) => acc + Math.max(12, s.length), 0);
+    let elapsed = 0;
+    for (let i = 0; i < sents.length; i++) {
+      const s = sents[i];
+      const dur = (Math.max(12, s.length) / totalChars) * scDur;
+      if (timeInSc <= elapsed + dur || i === sents.length - 1) {
+        return s;
+      }
+      elapsed += dur;
+    }
+    return sents[0];
+  }, [activeScene, currentTime]);
 
   const activeStageCharacters = (activeScene?.characters || [])
     .map((scChar) => {
@@ -384,6 +474,17 @@ export const StoryboardEditorView: React.FC = () => {
 
               {/* Center Stage Canvas */}
               <div className="flex-1 flex flex-col items-center justify-center">
+                {activeProject && (
+                  <audio
+                    ref={audioRef}
+                    src={`/api/v1/projects/${activeProject.id}/audio?stream=1`}
+                    preload="auto"
+                    onEnded={() => {
+                      setIsPlaying(false);
+                      setCurrentTime(0);
+                    }}
+                  />
+                )}
                 <DarktoonStageCanvas
                   aspectRatio={activeProject.aspect_ratio}
                   backgroundId={activeScene.background.asset_id}
@@ -391,7 +492,7 @@ export const StoryboardEditorView: React.FC = () => {
                   props={activeScene.props}
                   cameraShot={activeScene.camera_direction.shot}
                   cameraMovement={activeScene.camera_direction.movement}
-                  subtitleText={activeScene.transcript_text}
+                  subtitleText={currentShortSubtitle}
                   timeInSceneSec={timeInActiveScene}
                   isPlaying={isPlaying}
                   isMock={activeScene.is_mock}
@@ -407,10 +508,9 @@ export const StoryboardEditorView: React.FC = () => {
                     disabled={currentSceneIdx <= 0}
                     onClick={() => {
                       if (currentSceneIdx > 0) {
-                        setSelectedSceneId(
-                          scenes[currentSceneIdx - 1].id,
-                          true
-                        );
+                        const prev = scenes[currentSceneIdx - 1];
+                        setSelectedSceneId(prev.id, true);
+                        if (audioRef.current) audioRef.current.currentTime = prev.start_time;
                       }
                     }}
                     className="rounded border border-[#292930] bg-[#111114] p-1.5 text-[#F5F5F5] disabled:opacity-40 cursor-pointer"
@@ -440,10 +540,9 @@ export const StoryboardEditorView: React.FC = () => {
                     disabled={currentSceneIdx >= scenes.length - 1}
                     onClick={() => {
                       if (currentSceneIdx < scenes.length - 1) {
-                        setSelectedSceneId(
-                          scenes[currentSceneIdx + 1].id,
-                          true
-                        );
+                        const next = scenes[currentSceneIdx + 1];
+                        setSelectedSceneId(next.id, true);
+                        if (audioRef.current) audioRef.current.currentTime = next.start_time;
                       }
                     }}
                     className="rounded border border-[#292930] bg-[#111114] p-1.5 text-[#F5F5F5] disabled:opacity-40 cursor-pointer"
@@ -915,8 +1014,21 @@ export const StoryboardEditorView: React.FC = () => {
         duration={audio?.duration || 24}
         currentTime={currentTime}
         selectedSceneId={activeScene?.id || null}
-        onSelectScene={(sceneId, jump) => setSelectedSceneId(sceneId, jump)}
-        onSeek={(sec) => setCurrentTime(sec)}
+        onSelectScene={(sceneId, jump) => {
+          setSelectedSceneId(sceneId, jump);
+          if (jump) {
+            const target = scenes.find((s) => s.id === sceneId);
+            if (target && audioRef.current) {
+              audioRef.current.currentTime = target.start_time;
+            }
+          }
+        }}
+        onSeek={(sec) => {
+          setCurrentTime(sec);
+          if (audioRef.current) {
+            audioRef.current.currentTime = sec;
+          }
+        }}
         onToggleTrackMute={(trackId, muted) =>
           handleTrackUpdate(trackId, { muted })
         }

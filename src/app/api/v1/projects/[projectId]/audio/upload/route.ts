@@ -48,14 +48,11 @@ export async function POST(
       }
       const arrayBuf = await file.arrayBuffer();
       buffer = Buffer.from(arrayBuf);
-      // Estimate duration if WAV or use provided duration
+      // Accurate duration using custom, WAV RIFF header, or FFmpeg stream analysis
       if (customDuration > 0) {
         durationSec = customDuration;
-      } else if (ext === "wav" && buffer.length > 44) {
-        const byteRate = buffer.readUInt32LE(28) || 44100;
-        durationSec = Math.max(4, Number(((buffer.length - 44) / byteRate).toFixed(2)));
       } else {
-        durationSec = Math.max(8, Math.min(180, Math.round(buffer.length / 16000)));
+        durationSec = StorageService.getAudioDuration(buffer);
       }
     } else {
       const body = await req.json();

@@ -151,14 +151,14 @@ export function getRigPoseForAction(
   switch (action) {
     case "sitting":
       return {
-        headRotate: 8 + Math.sin(timeSec * 1.2) * 2,
+        headRotate: 6 + Math.sin(timeSec * 1.2) * 2,
         headOffsetY: breathe,
-        torsoRotate: 4,
-        torsoOffsetY: 36,
-        leftArmRotate: 25,
-        rightArmRotate: -20,
-        leftLegRotate: 75,
-        rightLegRotate: -75,
+        torsoRotate: 2,
+        torsoOffsetY: 26,
+        leftArmRotate: 18,
+        rightArmRotate: -16,
+        leftLegRotate: 8,
+        rightLegRotate: -6,
         isSitting: true,
       };
     case "looking_down":
@@ -508,80 +508,125 @@ export function renderSceneSvgString(params: {
         ? 1.12
         : 1.0;
 
-    const baseY = floorY - 125 * scale + pose.torsoOffsetY * 0.45;
+    const isSitting = action === "sitting" || pose.isSitting;
+    const baseY = isSitting
+      ? floorY - 105 * scale + pose.torsoOffsetY * 0.3
+      : floorY - 122 * scale + pose.torsoOffsetY * 0.42;
 
     // Expression geometry for eyes & mouth
-    let eyesSvg = `<circle cx="-11" cy="-4" r="3.2" fill="${palette.shadow}"/><circle cx="11" cy="-4" r="3.2" fill="${palette.shadow}"/>`;
-    let browsSvg = "";
-    let mouthSvg = `<line x1="-7" y1="11" x2="7" y2="11" stroke="${palette.shadow}" stroke-width="2.4" stroke-linecap="round"/>`;
+    let eyesSvg = `
+      <g transform="translate(-10, -2)">
+        <ellipse cx="0" cy="0" rx="5" ry="6" fill="#FFFFFF"/>
+        <ellipse cx="0" cy="0" rx="3.8" ry="5.2" fill="#312E81"/>
+        <ellipse cx="0" cy="0.4" rx="2" ry="2.8" fill="#0F172A"/>
+        <circle cx="-1.2" cy="-1.8" r="1.5" fill="#FFFFFF"/>
+        <circle cx="1.5" cy="1.5" r="0.8" fill="#FFFFFF" opacity="0.8"/>
+        <path d="M -5.5 -3 Q 0 -6.5 5.5 -3 Q 7 -4 7.5 -6" stroke="#141524" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M -2.8 4.6 Q 0 5.8 2.8 4.6" stroke="#475569" stroke-width="1" fill="none" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(10, -2)">
+        <ellipse cx="0" cy="0" rx="5" ry="6" fill="#FFFFFF"/>
+        <ellipse cx="0" cy="0" rx="3.8" ry="5.2" fill="#312E81"/>
+        <ellipse cx="0" cy="0.4" rx="2" ry="2.8" fill="#0F172A"/>
+        <circle cx="-1.2" cy="-1.8" r="1.5" fill="#FFFFFF"/>
+        <circle cx="1.5" cy="1.5" r="0.8" fill="#FFFFFF" opacity="0.8"/>
+        <path d="M -5.5 -3 Q 0 -6.5 5.5 -3 Q 7 -4 7.5 -6" stroke="#141524" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M -2.8 4.6 Q 0 5.8 2.8 4.6" stroke="#475569" stroke-width="1" fill="none" stroke-linecap="round"/>
+      </g>
+    `;
+    let browsSvg = `<path d="M -14 -9 Q -9 -12 -4 -9" stroke="#1E202C" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M 4 -9 Q 9 -12 14 -9" stroke="#1E202C" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+    let mouthSvg = `<path d="M -4 13 Q 0 15 4 13" stroke="#1E202C" stroke-width="1.8" stroke-linecap="round" fill="none"/>`;
     let extraFaceSvg = "";
 
     switch (expression) {
       case "sad":
-        browsSvg = `<line x1="-16" y1="-10" x2="-6" y2="-13" stroke="${palette.shadow}" stroke-width="2.2" stroke-linecap="round"/><line x1="6" y1="-13" x2="16" y2="-10" stroke="${palette.shadow}" stroke-width="2.2" stroke-linecap="round"/>`;
-        mouthSvg = `<path d="M -8 14 Q 0 8 8 14" fill="none" stroke="${palette.shadow}" stroke-width="2.4" stroke-linecap="round"/>`;
+        browsSvg = `<line x1="-15" y1="-9" x2="-6" y2="-12" stroke="#1E202C" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="-12" x2="15" y2="-9" stroke="#1E202C" stroke-width="2" stroke-linecap="round"/>`;
+        mouthSvg = `<path d="M -5 14 Q 0 11 5 14" fill="none" stroke="#1E202C" stroke-width="1.8" stroke-linecap="round"/>`;
         break;
       case "crying":
-        browsSvg = `<line x1="-16" y1="-10" x2="-6" y2="-13" stroke="${palette.shadow}" stroke-width="2.2"/><line x1="6" y1="-13" x2="16" y2="-10" stroke="${palette.shadow}" stroke-width="2.2"/>`;
-        mouthSvg = `<path d="M -8 14 Q 0 7 8 14" fill="none" stroke="${palette.shadow}" stroke-width="2.4"/>`;
-        extraFaceSvg = `<path d="M -11 0 L -11 12 M 11 0 L 11 12" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round"/>`;
+        browsSvg = `<line x1="-15" y1="-9" x2="-6" y2="-12" stroke="#1E202C" stroke-width="2"/><line x1="6" y1="-12" x2="15" y2="-9" stroke="#1E202C" stroke-width="2"/>`;
+        mouthSvg = `<path d="M -5 14 Q 0 11 5 14" fill="none" stroke="#1E202C" stroke-width="1.8"/>`;
+        extraFaceSvg = `<path d="M -10 4 L -10 14 M 10 4 L 10 14" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round"/>`;
         break;
       case "happy":
-        mouthSvg = `<path d="M -9 9 Q 0 17 9 9" fill="none" stroke="${palette.shadow}" stroke-width="2.4" stroke-linecap="round"/>`;
+        browsSvg = `<path d="M -14 -9 Q -9 -12 -4 -9" stroke="#1E202C" stroke-width="1.8" fill="none"/><path d="M 4 -9 Q 9 -12 14 -9" stroke="#1E202C" stroke-width="1.8" fill="none"/>`;
+        eyesSvg = `<path d="M -14 0 Q -9 -5 -4 0" stroke="#1E202C" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M 4 0 Q 9 -5 14 0" stroke="#1E202C" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+        mouthSvg = `<path d="M -5 12 Q 0 16 5 12" fill="none" stroke="#1E202C" stroke-width="2" stroke-linecap="round"/>`;
         break;
       case "angry":
-        browsSvg = `<line x1="-16" y1="-13" x2="-5" y2="-8" stroke="${palette.shadow}" stroke-width="2.6" stroke-linecap="round"/><line x1="5" y1="-8" x2="16" y2="-13" stroke="${palette.shadow}" stroke-width="2.6" stroke-linecap="round"/>`;
-        mouthSvg = `<line x1="-8" y1="13" x2="8" y2="11" stroke="${palette.shadow}" stroke-width="2.6" stroke-linecap="round"/>`;
-        break;
-      case "surprised":
-        eyesSvg = `<circle cx="-11" cy="-4" r="4.2" fill="${palette.shadow}"/><circle cx="11" cy="-4" r="4.2" fill="${palette.shadow}"/>`;
-        mouthSvg = `<circle cx="0" cy="12" r="4.5" fill="${palette.shadow}"/>`;
+        browsSvg = `<line x1="-15" y1="-12" x2="-6" y2="-8" stroke="#1E202C" stroke-width="2.4" stroke-linecap="round"/><line x1="6" y1="-8" x2="15" y2="-12" stroke="#1E202C" stroke-width="2.4" stroke-linecap="round"/>`;
+        mouthSvg = `<line x1="-5" y1="13" x2="5" y2="12" stroke="#1E202C" stroke-width="2" stroke-linecap="round"/>`;
         break;
       case "tired":
-        eyesSvg = `<line x1="-15" y1="-4" x2="-7" y2="-4" stroke="${palette.shadow}" stroke-width="2.4" stroke-linecap="round"/><line x1="7" y1="-4" x2="15" y2="-4" stroke="${palette.shadow}" stroke-width="2.4" stroke-linecap="round"/>`;
-        mouthSvg = `<line x1="-6" y1="12" x2="5" y2="12" stroke="${palette.shadow}" stroke-width="2" stroke-linecap="round"/>`;
-        break;
-      case "worried":
-      case "confused":
-      case "thinking":
-        browsSvg = `<line x1="-15" y1="-11" x2="-6" y2="-13" stroke="${palette.shadow}" stroke-width="2.2"/><line x1="6" y1="-12" x2="15" y2="-12" stroke="${palette.shadow}" stroke-width="2.2"/>`;
-        mouthSvg = `<path d="M -7 12 Q -2 10 6 13" fill="none" stroke="${palette.shadow}" stroke-width="2.2" stroke-linecap="round"/>`;
+        eyesSvg = `<path d="M -14 0 Q -9 -3 -4 0" stroke="#1E202C" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M 4 0 Q 9 -3 14 0" stroke="#1E202C" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+        mouthSvg = `<line x1="-4" y1="13" x2="4" y2="13" stroke="#1E202C" stroke-width="1.8" stroke-linecap="round"/>`;
         break;
     }
 
     const phoneSvg =
       pose.holdingPhone || action === "holding_phone" || action === "using_phone"
-        ? `<rect x="26" y="-8" width="12" height="20" rx="2.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.6"/>`
+        ? `<rect x="24" y="-6" width="12" height="20" rx="2.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.6"/>`
         : "";
 
     return `
       <g transform="translate(${cx}, ${baseY}) scale(${scale})">
-        <!-- Character Floor Shadow -->
-        <ellipse cx="0" cy="126" rx="42" ry="9" fill="#000000" opacity="0.55"/>
-        <!-- 8-Part Articulated Rig -->
-        <!-- Left Leg -->
-        <g transform="translate(-12, 52) rotate(${pose.leftLegRotate})">
-          <rect x="-6" y="0" width="12" height="68" rx="6" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2"/>
+        <!-- Floor Shadow -->
+        <ellipse cx="0" cy="${isSitting ? 74 : 100}" rx="${isSitting ? 48 : 42}" ry="8" fill="#000000" opacity="0.6"/>
+        ${
+          isSitting
+            ? `<rect x="-28" y="-36" width="56" height="62" rx="12" fill="#111219" stroke="#252736" stroke-width="2"/>
+               <rect x="-16" y="-52" width="32" height="14" rx="5" fill="#111219" stroke="#252736" stroke-width="1.5"/>`
+            : ""
+        }
+        <!-- Legs -->
+        <g transform="translate(-10, 42) rotate(${isSitting ? 6 : pose.leftLegRotate})">
+          <rect x="-6" y="0" width="12" height="${isSitting ? 44 : 54}" rx="5" fill="#12131C" stroke="#282B3E" stroke-width="1.5"/>
+          <path d="M -6 ${isSitting ? 38 : 48} L 5 ${isSitting ? 38 : 48} L 7 ${isSitting ? 46 : 58} L -7 ${isSitting ? 46 : 58} Z" fill="#1E202E"/>
+          <rect x="-8" y="${isSitting ? 44 : 56}" width="16" height="3" rx="1" fill="#E2E8F0"/>
         </g>
-        <!-- Right Leg -->
-        <g transform="translate(12, 52) rotate(${pose.rightLegRotate})">
-          <rect x="-6" y="0" width="12" height="68" rx="6" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2"/>
+        <g transform="translate(10, 42) rotate(${isSitting ? -6 : pose.rightLegRotate})">
+          <rect x="-6" y="0" width="12" height="${isSitting ? 44 : 54}" rx="5" fill="#12131C" stroke="#282B3E" stroke-width="1.5"/>
+          <path d="M -6 ${isSitting ? 38 : 48} L 5 ${isSitting ? 38 : 48} L 7 ${isSitting ? 46 : 58} L -7 ${isSitting ? 46 : 58} Z" fill="#1E202E"/>
+          <rect x="-8" y="${isSitting ? 44 : 56}" width="16" height="3" rx="1" fill="#E2E8F0"/>
         </g>
-        <!-- Body / Torso -->
+        <!-- Torso -->
         <g transform="rotate(${pose.torsoRotate})">
-          <rect x="-24" y="-22" width="48" height="80" rx="22" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2.4"/>
-          <!-- Left Arm -->
-          <g transform="translate(-24, -12) rotate(${pose.leftArmRotate})">
-            <rect x="-6" y="0" width="12" height="58" rx="6" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2"/>
+          <rect x="-25" y="-20" width="50" height="66" rx="17" fill="#1C1E2B" stroke="#383C52" stroke-width="2"/>
+          <path d="M -14 24 L 14 24 L 11 38 L -11 38 Z" fill="#26293B" opacity="0.85"/>
+          <line x1="-5" y1="-10" x2="-5" y2="5" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="5" y1="-10" x2="5" y2="5" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Arms -->
+          <g transform="translate(-24, -10) rotate(${isSitting ? 16 : pose.leftArmRotate})">
+            <rect x="-6" y="0" width="12" height="42" rx="6" fill="#1C1E2B" stroke="#383C52" stroke-width="1.6"/>
+            <circle cx="0" cy="44" r="5" fill="#FFF3EB"/>
           </g>
-          <!-- Right Arm -->
-          <g transform="translate(24, -12) rotate(${pose.rightArmRotate})">
-            <rect x="-6" y="0" width="12" height="58" rx="6" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2"/>
+          <g transform="translate(24, -10) rotate(${isSitting ? -16 : pose.rightArmRotate})">
+            <rect x="-6" y="0" width="12" height="42" rx="6" fill="#1C1E2B" stroke="#383C52" stroke-width="1.6"/>
+            <circle cx="0" cy="44" r="5" fill="#FFF3EB"/>
             ${phoneSvg}
           </g>
-          <!-- Head + Eyes + Mouth -->
-          <g transform="translate(0, ${-56 + pose.headOffsetY}) rotate(${pose.headRotate})">
-            <circle cx="0" cy="0" r="32" fill="${palette.fill}" stroke="${palette.stroke}" stroke-width="2.6"/>
+          <!-- Anime Head + Hair + Headphones -->
+          <g transform="translate(0, ${-48 + pose.headOffsetY}) rotate(${pose.headRotate})">
+            <!-- Back Hair -->
+            <path d="M -24 -12 C -28 4 -25 22 -18 30 C -14 16 -16 2 -14 -10 Z" fill="#141524"/>
+            <path d="M 24 -12 C 28 4 25 22 18 30 C 14 16 16 2 14 -10 Z" fill="#141524"/>
+            <circle cx="0" cy="-14" r="20" fill="#141524"/>
+            <rect x="-6" y="16" width="12" height="12" fill="#FFF3EB" stroke="#222436" stroke-width="1"/>
+            <!-- Tapered Jawline -->
+            <path d="M -22 -6 C -22 8 -14 21 0 26 C 14 21 22 8 22 -6 C 22 -16 -22 -16 -22 -6 Z" fill="#FFF3EB" stroke="#222436" stroke-width="1.8"/>
+            <!-- Bangs -->
+            <path d="M -24 -8 Q -14 3 -6 -4 Q 0 6 6 -4 Q 14 3 24 -8 Q 18 -26 0 -26 Q -18 -26 -24 -8 Z" fill="#141524"/>
+            <path d="M -23 -6 C -25 2 -23 12 -20 16 C -20 8 -21 2 -19 -6 Z" fill="#141524"/>
+            <path d="M 23 -6 C 25 2 23 12 20 16 C 20 8 21 2 19 -6 Z" fill="#141524"/>
+            <!-- Headphones -->
+            <path d="M -23 -3 Q 0 -30 23 -3" stroke="#475569" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <rect x="-27" y="-7" width="5" height="18" rx="2.5" fill="#1E293B" stroke="#64748B" stroke-width="1.3"/>
+            <rect x="22" y="-7" width="5" height="18" rx="2.5" fill="#1E293B" stroke="#64748B" stroke-width="1.3"/>
+            <!-- Blush -->
+            <ellipse cx="-12" cy="6" rx="4.5" ry="2.2" fill="#FB7185" opacity="0.35"/>
+            <ellipse cx="12" cy="6" rx="4.5" ry="2.2" fill="#FB7185" opacity="0.35"/>
+            <!-- Nose -->
+            <circle cx="0" cy="6" r="1" fill="#E29578"/>
             ${browsSvg}
             ${eyesSvg}
             ${mouthSvg}
@@ -614,16 +659,26 @@ export function renderSceneSvgString(params: {
     ${characters.map((c, idx) => renderCharacterRigSvg(c, idx)).join("\n")}
     ${
       subtitleText
-        ? `<g transform="translate(${width * 0.5}, ${height - 52})">
-            <rect x="${-Math.min(width * 0.42, subtitleText.length * 6.5 + 32)}" y="-24" width="${Math.min(
-            width * 0.84,
-            subtitleText.length * 13 + 64
-          )}" height="42" rx="8" fill="#0B0B0D" opacity="0.82" stroke="#292930" stroke-width="1"/>
-            <text x="0" y="3" text-anchor="middle" fill="#F5F5F5" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="500">${subtitleText
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")}</text>
-          </g>`
+        ? (() => {
+            const sents = subtitleText
+              .split(/(?<=[.?!;])\s+|\n+/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const shortText = sents[0] || subtitleText;
+            const displayStr =
+              shortText.length > 80 ? shortText.slice(0, 77) + "..." : shortText;
+            const boxW = Math.min(
+              width * 0.88,
+              Math.max(260, displayStr.length * 11 + 48)
+            );
+            return `<g transform="translate(${width * 0.5}, ${height - 48})">
+              <rect x="${-boxW / 2}" y="-22" width="${boxW}" height="44" rx="22" fill="#0B0B0D" opacity="0.92" stroke="#3B82F6" stroke-opacity="0.5" stroke-width="1.5"/>
+              <text x="0" y="5" text-anchor="middle" fill="#F8FAFC" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" font-weight="600">&ldquo;${displayStr
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")}&rdquo;</text>
+            </g>`;
+          })()
         : ""
     }
   </svg>`;
