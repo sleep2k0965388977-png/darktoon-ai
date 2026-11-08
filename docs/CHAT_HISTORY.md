@@ -49,11 +49,27 @@
 
 9. **Yêu cầu 10:** *“hãy cho t link git”* & *“hãy deploy lên git chưa và commit cả lịch sử chát lên git cho t”*
    * **Nội dung:** Cung cấp link git và đóng gói toàn bộ mã nguồn cùng lịch sử chat để commit lên GitHub.
+   * **Kết quả:** Đã hợp nhất commit 2 máy thành một nhánh `main` duy nhất tại `https://github.com/sleep2k0965388977-png/darktoon-ai`.
+
+10. **Yêu cầu 11:** *“DARKTOON AI – JAPANESE ANIME CINEMATIC ENGINE 2.0 (Makoto Shinkai / Kimi No Na Wa)”*
+    * **Nội dung:** Tích hợp bộ quy chuẩn điện ảnh anime Nhật Bản (Makoto Shinkai, mây tầng ánh sáng volumetric, góc phố Tokyo, nhân vật biểu cảm có khóa diện mạo Character Consistency, phân lớp bố cục 3 tầng Foreground/Midground/Background và Visual Quality Checker).
+    * **Kết quả:**
+      * Xây dựng bộ module Python Anime Engine 2.0: `anime_visual_config.py`, `scene_composition.py`, `character_consistency.py`, `visual_quality_checker.py`, `cinematic_prompt_director.py`, `anime_scene_analyzer.py`, `anime_style_engine.py`.
+      * Tích hợp trực tiếp `buildCinematicAnimePrompt` vào pipeline TypeScript `src/backend/providers/providerRegistry.ts`.
+      * Toàn bộ 12/12 unit/integration tests tiếp tục đạt 100% PASS.
 
 ---
 
 ## 2. Danh sách các tệp tin đã tạo và nâng cấp
 
+* `anime_visual_config.py`: Cấu hình quy chuẩn phong cách Makoto Shinkai, ánh sáng volumetric, bầu trời hoàng hôn gradient và negative prompt lọc dị tật.
+* `scene_composition.py`: Điều phối bố cục 3 lớp (Tiền cảnh - Trung cảnh - Hậu cảnh) và 7 góc máy điện ảnh (`wide`, `medium`, `closeup`, `low`, `high`, `overhead`, `tracking`).
+* `character_consistency.py`: Động cơ khóa nhận dạng nhân vật (Visual DNA Anchor) cố định kiểu tóc, cằm V-line, mắt indigo và trang phục hoodie.
+* `visual_quality_checker.py`: Bộ kiểm định chất lượng tự động (QC) đánh giá độ chi tiết prompt, tính bám sát lời thoại và quy tắc cấm sinh chữ/watermark.
+* `cinematic_prompt_director.py`: Trình biên soạn Prompt điện ảnh kết hợp bối cảnh, nhân vật, hành động, biểu cảm và ánh sáng.
+* `anime_scene_analyzer.py`: Phân tích lời thoại audio thành các phân cảnh 3-8 giây bằng Gemini hoặc thuật toán heuristic thông minh.
+* `anime_style_engine.py`: Master pipeline CLI và bộ điều phối tổng thể chạy độc lập hoặc tích hợp.
+* `src/backend/providers/providerRegistry.ts`: Tích hợp trực tiếp bộ sinh Prompt Anime 2.0 vào hệ thống Storyboard & Image Provider của Darktoon AI.
 * `src/backend/storage/storageService.ts`: Dịch vụ lưu trữ tệp tin cục bộ an toàn, tính toán waveform peak và đo thời lượng âm thanh.
 * `src/components/animation/DarktoonStageCanvas.tsx`: Bộ render sân khấu hoạt hình 2D Anime chất lượng cao, hỗ trợ góc quay Camera điện ảnh, hiệu ứng ánh sáng bloom/glow và phụ đề câu ngắn.
 * `src/components/storyboard/StoryboardEditorView.tsx`: Trình biên tập Storyboard 3 cột với thanh timeline 6-track, tự động bám sát Master Clock khi Play và nút tách câu ngắn.

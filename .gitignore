@@ -25,3 +25,7 @@ npm-debug.log*
 Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+__pycache__/
+*.pyc
