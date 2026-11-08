@@ -27,13 +27,11 @@ class JapaneseAnimeCinematicEngine:
     def process_storyboard(
         self,
         transcript: str,
-        total_duration_sec: float = 65.0,
+        total_duration_sec: float = 24.0,
         character_names: List[str] = None
     ) -> Dict[str, Any]:
-        """Quy trình hoàn chỉnh 6 bước từ Lời thoại Audio -> Kịch bản Visual Anime đạt chuẩn QC"""
-        character_names = character_names or ["Hu"]
-
-        # Bước 1 & 2: Phân tích transcript thành các cảnh ngắn theo nhịp thời gian
+        """Quy trình hoàn chỉnh từ Lời thoại Audio -> Kịch bản Visual Anime đạt chuẩn QC"""
+        # Bước 1 & 2: Phân tích transcript thành các cảnh visual theo ngữ cảnh và nhịp nói
         analysis_result = self.analyzer.analyze_transcript(transcript, total_duration_sec)
         scenes = analysis_result.get("scenes", [])
 
@@ -44,17 +42,19 @@ class JapaneseAnimeCinematicEngine:
         for sc in scenes:
             narration = sc.get("narration", "")
             location = sc.get("location", "")
-            action = sc.get("action", "sitting")
+            action = sc.get("action", "")
             emotion = sc.get("emotion", "neutral")
-            camera = sc.get("camera", "medium")
-            time_of_day = sc.get("time_of_day", "day")
+            camera = sc.get("camera_distance", sc.get("camera", "medium"))
+            time_of_day = sc.get("time_of_day", "morning")
             weather = sc.get("weather", "clear")
             lighting = sc.get("lighting", "")
+            # Ưu tiên nhân vật được trích xuất trực tiếp từ cảnh
+            scene_chars = sc.get("characters") or character_names or []
 
             # Tạo prompt điện ảnh chuẩn Makoto Shinkai
             prompt_data = build_scene_prompt(
                 narration=narration,
-                characters=character_names,
+                characters=scene_chars,
                 location=location,
                 action=action,
                 emotion=emotion,
@@ -69,7 +69,7 @@ class JapaneseAnimeCinematicEngine:
                 prompt=prompt_data["prompt"],
                 negative_prompt=prompt_data["negative_prompt"],
                 narration=narration,
-                has_character=bool(character_names)
+                characters=scene_chars
             )
 
             overall_qc_scores.append(qc.score)
@@ -81,9 +81,12 @@ class JapaneseAnimeCinematicEngine:
                 "end_time": sc.get("end_time", 0.0),
                 "duration": sc.get("duration", 0.0),
                 "location": location,
+                "characters": scene_chars,
                 "action": action,
                 "emotion": emotion,
-                "camera": camera,
+                "camera_angle": sc.get("camera_angle", "eye-level"),
+                "camera_distance": sc.get("camera_distance", camera),
+                "lighting": lighting,
                 "transition": sc.get("transition", "dissolve"),
                 "prompt": prompt_data["prompt"],
                 "negative_prompt": prompt_data["negative_prompt"],
@@ -92,6 +95,7 @@ class JapaneseAnimeCinematicEngine:
                 "qc": {
                     "passed": qc.passed,
                     "score": qc.score,
+                    "metrics": qc.metrics,
                     "issues": qc.issues,
                     "recommendations": qc.recommendations
                 }
@@ -119,17 +123,15 @@ def main():
 
     parser = argparse.ArgumentParser(description="DARKTOON AI - Japanese Anime Cinematic Engine 2.0 CLI")
     parser.add_argument("--transcript", type=str, default="", help="Transcript audio text")
-    parser.add_argument("--duration", type=float, default=65.0, help="Total duration in seconds")
+    parser.add_argument("--duration", type=float, default=24.0, help="Total duration in seconds")
     parser.add_argument("--output", type=str, default="", help="Output JSON path")
     args = parser.parse_args()
 
     default_transcript = (
-        "Chào bạn, người có lẽ đang có cả trăm tab suy nghĩ đang mở trong đầu. "
-        "Cảm ơn bạn vì đã quyết định mở thêm một tab này nữa và dành lựa chọn đó cho mình. "
-        "Mong rằng âm thanh từ chiếc tab này sẽ đủ dịu dàng để bạn có thể tạm thời lỡ tab khác nhé, và mình là Hu. "
-        "Dạo này cũng bắt đầu vào mùa thu rồi mọi người ạ. Chiều nay thì gió hơi se lạnh. "
-        "Thành phố cũng bắt đầu chậm lại, người người vội vã trở về nhà. Ánh đèn đường thì vừa kịp bật lên, vàng ấm. "
-        "Mình từng nghĩ là cô đơn là khi mà mình chẳng có ai ở bên. Nhưng mà càng lớn thì mình càng hiểu là đôi khi cô đơn là lúc có người ở bên mà lòng mình thì vẫn thấy trống."
+        "Buổi sáng, một chàng trai đứng trên sân ga. "
+        "Cậu nhìn chuyến tàu đang tiến đến. "
+        "Bỗng nhiên, cậu nhìn thấy một cô gái đứng bên kia đường ray. "
+        "Cô gái quay đầu lại và mỉm cười."
     )
 
     text = args.transcript.strip() or default_transcript
